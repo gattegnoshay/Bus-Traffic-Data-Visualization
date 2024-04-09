@@ -215,7 +215,7 @@ if __name__ == '__main__':
     #createZerosChart(df)
     #createStackedBarChart(df)
     #createGeoMapChart(df)
-    createNetworkGraph(df)
+    #createNetworkGraph(df)
     #df = load2324Data()
     #createTreeMap(df)
 
