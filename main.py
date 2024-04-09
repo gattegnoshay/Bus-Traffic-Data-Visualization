@@ -174,12 +174,39 @@ def createGeoMapChart(df):
     plt.show()
 
 
+
+def createNetworkGraph(df):
+
+    import networkx as nx
+    df["OriginCityName"].apply(lambda x:get_display(x))
+    df["DestinationCityName"].apply(lambda x: get_display(x))
+    group = df.groupby(['OriginCityName', 'DestinationCityName']).agg({'WeeklyPassengers': 'sum'}).reset_index()
+    group["OriginCityName"] = group["OriginCityName"].apply(lambda x: get_display(x.replace(" ","\n")))
+    group["DestinationCityName"] = group["DestinationCityName"].apply(lambda x: get_display(x.replace(" ","\n")))
+    nodes = pd.Index(group['OriginCityName'].append(group['DestinationCityName']).unique())
+    group = group[group["OriginCityName"]!= group["DestinationCityName"]]
+    group = group.sort_values(by='WeeklyPassengers', ascending=False).head(30)
+
+    G = nx.from_pandas_edgelist(group, 'OriginCityName', 'DestinationCityName', edge_attr='WeeklyPassengers')
+
+    # Draw the graph
+    pos = nx.kamada_kawai_layout(G)  # positions for all nodes
+
+    nx.draw_networkx(G, pos, with_labels=True, node_size=1000, node_color="skyblue", font_size=9,font_family ="sans-serif")
+
+    edge_widths = [data['WeeklyPassengers'] / 50000 for _, _, data in G.edges(data=True)]
+    nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.3, edge_color='black')
+
+    plt.title("Network Graph with Edge Weights")
+    plt.show()
+
 if __name__ == '__main__':
     from bidi.algorithm import get_display # pip install python-bidi
     import pandas as pd
     import matplotlib.pyplot as plt
     import plotly.express as px
-    import geopandas
+    import geopandas # pip install geopandas
+    import plotly.graph_objects as go
 
     df = loadData()
 
@@ -187,10 +214,22 @@ if __name__ == '__main__':
     #createBarChart(df)
     #createZerosChart(df)
     #createStackedBarChart(df)
-    createGeoMapChart(df)
-
+    #createGeoMapChart(df)
+    createNetworkGraph(df)
     #df = load2324Data()
     #createTreeMap(df)
 
 
 
+"""
+    empty_df = pd.DataFrame(columns=["CityName1","CityName2","WeeklyPassengers"])
+    print(empty_df)
+    for index, row in group.iterrows():
+        for index1, row1 in group.iterrows():
+            if row["OriginCityName"] == row1["CityName2"] and row["DestinationCityName"] == lastrow["CityName1"]:
+                empty_df[row["OriginCityName"] == empty_df["CityName2"]]["WeeklyPassengers"] += row["WeeklyPassengers"]
+            else:
+                empty_df.append(row, ignore_index=True)
+
+    print(empty_df)
+"""
