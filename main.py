@@ -417,16 +417,22 @@ def createErrorBar(df):
     plt.show()
 
 
+
+
 def createViolinChart(df):
+    from matplotlib.widgets import RangeSlider
     import seaborn as sns
     func= "sum"
 
+    """
     #check n largest
+    
     group = df.groupby(['OriginCityName']).agg(
         {'Friday - 15:00-18:59': func, 'Friday - 19:00-23:59': func, 'Saturday - 00:00-03:59': func,
          'Saturday - 04:00-05:59': func, 'Saturday - 06:00-08:59': func, 'Saturday - 09:00-11:59': func,
          'Saturday - 12:00-14:59': func, 'Saturday - 15:00-18:59': func}).reset_index()
     print(group.nlargest(5,'Saturday - 12:00-14:59'))
+"""
 
     #prepare for violin
     sliced = df[['OriginCityName','Friday - 15:00-18:59','Friday - 19:00-23:59','Saturday - 00:00-03:59','Saturday - 04:00-05:59','Saturday - 06:00-08:59','Saturday - 09:00-11:59','Saturday - 12:00-14:59','Saturday - 15:00-18:59']]
@@ -434,19 +440,59 @@ def createViolinChart(df):
 
     df = df[(df["OriginCityName"] == "ירושלים") | (df["OriginCityName"] == "חיפה") | (df["OriginCityName"] == "נצרת") | (df["OriginCityName"] == "מגאר")| (df["OriginCityName"] == "נוף הגליל")]
 
-    df = df[['OriginCityName', 'Saturday - 12:00-14:59']].dropna()
+    #df = df[['OriginCityName', 'Saturday - 12:00-14:59']].dropna()
     df["OriginCityName"] = df["OriginCityName"].apply(get_display)
     # Display the plot
-    sns.violinplot(x='OriginCityName', y='Saturday - 12:00-14:59', data=df,linewidth=1.5,showextrema=True)
-    plt.title('Violin Plot')
-    plt.ylim(0,150)
-    plt.xlabel(get_display('שם עיר'))
-    plt.ylabel(get_display('כמות נוסעים'))
-    plt.title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת 12:00-14:59'))
+
+    fig, ax = plt.subplot_mosaic(
+        [
+            ['main', 'radio']
+        ],
+        width_ratios=[5, 1]
+       # layout='constrained',
+    )
+    ax["main"] = sns.violinplot(x='OriginCityName', y='Saturday - 12:00-14:59', data=df, linewidth=1.5,
+                                showextrema=True, ax=ax['main'])
+    ax['main'].set_xlabel(get_display('שם עיר'))
+    ax['main'].set_ylabel(get_display('כמות נוסעים'+ " \n" +' ממוצעת לקו'), rotation=0, labelpad=30)
+    ax['main'].set_title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת'))
+    ax['main'].set_ylim(0, 200)
+
+
+
+
+
+    #ax_radio = plt.axes([0, 0.5, 0.15, 0.5])  # [left, bottom, width, height]
+    radio_button = RadioButtons(ax['radio'], ('Friday - 15:00-18:59','Friday - 19:00-23:59','Saturday - 06:00-08:59','Saturday - 09:00-11:59','Saturday - 12:00-14:59','Saturday - 15:00-18:59'))
+    ax['radio'].set_title(get_display('התפלגות לפי תקופה'))
+    def on_radio_button_clicked(label):
+        ax['main'].cla()  # Clear current plot
+        sns.violinplot(x='OriginCityName', y=label, data=df, linewidth=1.5, showextrema=True,ax=ax['main'])
+        ax['main'].set_xlabel(get_display('שם עיר'))
+        ax['main'].set_ylabel(get_display('כמות נוסעים'+ " \n" +' ממוצעת לקו'), rotation=0, labelpad=30)
+        ax['main'].set_title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת'))
+        ax['main'].set_ylim(0, 150)
+        plt.draw()
+    radio_button.on_clicked(on_radio_button_clicked)
+
+    #Slider
+    ax_slider = plt.axes([0.2, 0.02, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+    slider = RangeSlider(ax_slider, 'Range', 0, 200, valinit=(0, 200))
+
+    def update_range(val):
+        lower, upper = slider.val
+        ax['main'].set_ylim(lower, upper)
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update_range)
 
     plt.show()
+
+    plt.show()
+
 if __name__ == '__main__':
     from bidi.algorithm import get_display # pip install python-bidi
+    from matplotlib.widgets import RadioButtons
     import numpy as np
     import pandas as pd
     import matplotlib.pyplot as plt
