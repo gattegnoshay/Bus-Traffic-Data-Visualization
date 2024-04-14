@@ -2,9 +2,7 @@
 def loadData():
     return  pd.concat([pd.read_csv("./Data/busdata2022.csv"), pd.read_csv("./Data/busdata2023.csv"),
                     pd.read_csv("./Data/busdata2024.csv")])
-def load2324Data():
-    return  pd.concat([ pd.read_csv("./Data/busdata2023.csv"),
-                    pd.read_csv("./Data/busdata2024.csv")])
+
 def replace_agency_name(name):
     if name not in ['אגד', 'מטרופולין']:
         return get_display('אחר')
@@ -16,18 +14,11 @@ def getDescriptiveStatistics(df):
     print(df.describe())
     df.describe().transpose().to_csv("descriptive statistics.csv")
     print(df.corr().to_csv("corr.csv"))
-    #print(df['Saturday - 19:00-23:59'].mean())
-    #print(df['Saturday - 19:00-23:59'].std())
 
 def createBarChart(df):
 
     df = df[df['year'] == 2024]
     df = df[df['OperatingCostPerPassenger']!=0]
-    #df['AgencyName'] = df['AgencyName'].apply(lambda x: "אגד" if x == "אגד תעבורה" else x)
-    #df['AgencyName'] = df['AgencyName'].apply(lambda x: "דן" if x == "דן באר שבע" else x)
-    #df['AgencyName'] = df['AgencyName'].apply(lambda x: "דן" if x == "דן בדרום" else x)
-    #df['AgencyName'] = df['AgencyName'].apply(lambda x: "אלקטרה אפיקים" if x == "אלקטרה אפיקים תחבורה" else x)
-
     #filtered_df = df.drop_duplicates(subset=['RouteID'])
     df['AgencyName'] = df['AgencyName'].apply(get_display)
     average_passengers = df.groupby('AgencyName')['OperatingCostPerPassenger'].mean().sort_values(ascending=False)
@@ -103,51 +94,7 @@ def createTreeMap(df):
     )
     fig.show()
 
-
-
-
 def CreateStackedBarChart(df):
-    df= df[df["RouteDirection"] == 1]
-    df["NonUniqueStations"] = df['StationsInRoute'] - df['UniqueStations']
-    df['UniqueStations'] = df['StationsInRoute']
-    df['NonUniqueStations'] = df['NonUniqueStations']
-
-
-    AVGPASS = df.groupby(['year', 'Q'], group_keys=True).agg(
-        {'NonUniqueStations': 'sum', 'UniqueStations': 'sum'}).reset_index()
-    print(AVGPASS)
-    AVGPASS['NonUniqueDifference'] = AVGPASS['NonUniqueStations'].diff()
-    AVGPASS['UniqueDifference'] = AVGPASS['UniqueStations'].diff()
-
-    print(AVGPASS)
-
-    AVGPASS['Year-Quarter'] = AVGPASS['year'].astype(str) + ' - ' +"Q"+ AVGPASS['Q'].astype(str)
-
-
-    fig, ax = plt.subplots()
-    bars1 = ax.bar(AVGPASS['Year-Quarter'], AVGPASS['NonUniqueDifference'], label='NonUniqueDifference')
-    bars2 = ax.bar(AVGPASS['Year-Quarter'], AVGPASS['UniqueDifference'], bottom=AVGPASS['NonUniqueDifference'], label='UniqueDifference')
-
-    bars1[1].set_color('green')
-    bars1[2].set_color('green')
-    bars1[3].set_color('red')
-    bars2[1].set_color('#5fe85a')
-    bars2[2].set_color('#5fe85a')
-    bars2[3].set_color('#f0655d')
-
-
-
-    # Adding labels and title
-    ax.set_xlabel('Year-Quarter')
-    ax.set_ylabel('Values')
-    ax.set_title('Stcked Bar Chart')
-    #ax.set_ylim(175000,200000)
-
-    ax.legend()
-
-    plt.show()
-
-def CreateStackedInvestment(df):
     df = df[df["year"] == 2024]
 
     # Encode the operation periods into separate columns
@@ -197,18 +144,18 @@ def CreateStackedInvestment(df):
     fig, ax = plt.subplots()
 
     # Plot the bars
-    bars1 = ax.bar(x, y1, label=get_display('לפני 1 חודשים'), color='#E0A346')
-    bars2 = ax.bar(x, y2, bottom=y1, label=get_display('לפני 2 חודשים'), color="#90B5DA")
+    bars1 = ax.bar(x, y1, label=get_display('לפני חודש'), color='#E0A346')
+    bars2 = ax.bar(x, y2, bottom=y1, label=get_display('לפני חודשיים'), color="#90B5DA")
     bars3 = ax.bar(x, y3, bottom=y1 + y2, label=get_display('לפני 3 חודשים'), color="#B3987F")
     bars4 = ax.bar(x, y4, bottom=y1 + y2 + y3, label=get_display('לפני 4 חודשים'), color="#F5D963")
     bars5 = ax.bar(x, y5, bottom=y1 + y2 + y3 + y4, label=get_display('לפני 5 חודשים'), color="#407DB0")
 
 
     # Add labels, title, and legend
-    ax.set_xlabel(get_display('חברת אוטובוסים'), fontsize=10)
-    ax.set_ylabel(get_display('כמות קווים חדשים'), fontsize=10)
+    ax.set_xlabel(get_display('חברת אוטובוסים'), fontsize=10,labelpad=0)
+    ax.set_ylabel(get_display('מספר\nקווים\nחדשים'), fontsize=10,rotation=0,labelpad=15)
     ax.set_title(get_display('חמשת החברות המובילות במספר הקוים החדשים שהוקמו'), fontsize=10)
-    plt.suptitle(get_display('התחדשות! החברות ממשיכות להשיק קווים'))
+    plt.suptitle(get_display('התחדשות! חברות האוטובוסים ממשיכות להשיק קווים'))
     ax.legend()
     plt.grid(alpha=0.2)
     # Show the plot
@@ -243,36 +190,38 @@ def on_scroll(event):
     plt.draw()
 def createGeoMapChart(df):
 
+    #Dealing With Business Data
+    #AgencyName Union
     df['AgencyName'] = df['AgencyName'].apply(lambda x: "אגד" if x == "אגד תעבורה" else x)
     df['AgencyName'] = df['AgencyName'].apply(lambda x: "דן" if x == "דן באר שבע" else x)
     df['AgencyName'] = df['AgencyName'].apply(lambda x: "דן" if x == "דן בדרום" else x)
+    group = df.groupby(['OriginCityName','AgencyName']).agg({'WeeklyPassengers': 'mean'}).reset_index()
+    sorted_group = group.sort_values(by='WeeklyPassengers', ascending=False).drop_duplicates(subset='OriginCityName')
+    sorted_group['OriginCityName'] = sorted_group['OriginCityName'].apply(lambda x: get_display(str(x)))
 
-    cities = pd.read_csv("./Data/IsraelCities.csv",encoding = "Windows-1255")
-    cities['hebrew_name'] = cities['hebrew_name'].apply( lambda x: get_display(str(x)))
-
-    group = df.groupby(['OriginCityName','AgencyName']).agg({'WeeklyPassengers': 'sum'}).reset_index()
-
-    sorted_group = group.sort_values(by='WeeklyPassengers', ascending=False)
-    filtered_group = sorted_group.drop_duplicates(subset='OriginCityName')
-
-    filtered_group['OriginCityName'] = filtered_group['OriginCityName'].apply(lambda x: get_display(str(x)))
+    #Dealing with geo data
+    cities = pd.read_csv("./Data/IsraelCities.csv", encoding="Windows-1255")
+    cities['hebrew_name'] = cities['hebrew_name'].apply(lambda x: get_display(str(x)))
     cities['hebrew_name'] = cities['hebrew_name'].apply(lambda x: str(x))
+    merge = pd.merge(sorted_group, cities, left_on='OriginCityName', right_on='hebrew_name', how='left')
 
-    merge = pd.merge(filtered_group, cities, left_on='OriginCityName', right_on='hebrew_name', how='left')
-    merge = merge.nlargest(75, 'WeeklyPassengers')
+    #Dealing with colors
     colors = getColorsdf()
-
     colors['AgencyName'] = colors['AgencyName'].apply(lambda x: get_display(str(x)))
     merge['AgencyName'] = merge['AgencyName'].apply(lambda x: get_display(str(x)))
-
     merge = pd.merge(merge, colors, on='AgencyName', how='left')
-    print(merge)
     merge = merge.dropna()
 
+    #Printing the Graph
+    #Print Israel
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
     israel = world[world['name'] == 'Israel']
     israel.plot(color='lightgrey')
+    #drop unmatched color + heb_name
+    merge = merge.dropna(subset=["hebrew_name", "Color"])
+    merge = merge.nlargest(35, 'WeeklyPassengers')
 
+    #Print Data
     scatter = plt.scatter(merge['lng'], merge['lat'], color=merge['Color'], marker='o',s=15)
     mplcursors.cursor(scatter, hover=True).connect(
     "add", lambda sel: sel.annotation.set_text(merge['OriginCityName'].iloc[sel.target.index] +
@@ -282,7 +231,8 @@ def createGeoMapChart(df):
     legend_elements = []
     merge['Combined'] = merge['Color'] + '_' + merge['AgencyName'].astype(str)
     unique_pairs = merge['Combined'].unique()
-    print(merge)
+
+
     unique_pairs_df = pd.DataFrame([x.split('_') for x in unique_pairs], columns=['Color', 'AgencyName'])
     print(unique_pairs_df)
     for color, name in zip(unique_pairs_df['Color'], unique_pairs_df['AgencyName']):
@@ -294,7 +244,7 @@ def createGeoMapChart(df):
     plt.suptitle(get_display('תוכנית החלוקה'),fontsize=16)
     plt.title(get_display('חברת האוטובוסים לה ממוצע הנוסעים הגבוה ביותר בכל עיר'),fontsize=10)
     plt.axis('off')
-    plt.ylim(30,33.29)
+    plt.ylim(30.8,33.023)
     plt.show()
 
 
@@ -312,111 +262,21 @@ def createNetworkGraph(df):
 
     nodes = pd.Index(group['OriginCityName'].append(group['DestinationCityName']).unique())
     group = group[group["OriginCityName"]!= group["DestinationCityName"]]
-    group = group.sort_values(by='WeeklyPassengers', ascending=False).head(15)
+    group = group.sort_values(by='WeeklyPassengers', ascending=False).head(30)
 
     G = nx.from_pandas_edgelist(group, 'OriginCityName', 'DestinationCityName', edge_attr='WeeklyPassengers')
-    pos = nx.spring_layout(G,iterations = 12)
-    nx.draw_networkx(G, pos, with_labels=True, node_size=1100, node_color="#B2DFE7",font_size=9,font_family ="sans-serif")
+    pos = nx.fruchterman_reingold_layout(G,iterations = 10)
+    nx.draw_networkx(G, pos, with_labels=True, node_size=1000, node_color="#B2DFE7",font_size=9,font_family ="sans-serif",edgecolors="Grey")
+
     edge_widths = [data['WeeklyPassengers'] / 50000 for _, _, data in G.edges(data=True)]
     nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.3, edge_color='black')
 
-    plt.title(get_display('הקשרים בין הערים השונות בהתבסס על כמות נוסעים בקוים הנוסעים בין הערים'), fontsize=10)
-    plt.suptitle(get_display("תלויים במטרופולין: זרימת הנוסעים בין ערים שונות"))
+    #plt.title(get_display(''), fontsize=10)
+    plt.suptitle(get_display("תלויים במטרופולין"))
+    plt.title(get_display("מספר הנוסעים הממוצע בין הערים השונות"))
+    plt.subplots_adjust(top=0.88, bottom=0.11, left=0.125, right=0.9, hspace=0.2, wspace=0.2)
+
     plt.show()
-
-
-def CreateScatterPlot(df):
-
-    df = df[df["RouteType"] == "עירוני"]
-    df = df[df["WeeklyKM"] <1500]
-    df = df[df["DailyRides(Tuesday)"] < 60]
-    x = df["WeeklyKM"]
-    y = df["DailyRides(Tuesday)"]
-    m, b = np.polyfit(x, y, 1)
-
-    # Create scatter plot
-    plt.scatter(x, y, marker=".")
-    plt.plot(x, m * x + b, color='red')  # Plot the linear regression line
-
-    plt.xlabel('WeeklyKM')
-    plt.ylabel('DailyRides(Tuesday)')
-    plt.title('Scatter Plot')
-    #plt.ylim(None,60)
-    #plt.xlim(None,1500)
-    # Show plot
-    plt.show()
-
-def createLinePlot(df):
-    func = "sum"
-
-    df = df[df["year"] == 2024]
-    df = df[df["BusType"] == "עירוני"]
-
-    group = df.groupby(['OriginCityName']).agg(
-        {'Friday - 15:00-18:59': func, 'Friday - 19:00-23:59': func, 'Saturday - 00:00-03:59': func,
-         'Saturday - 04:00-05:59': func, 'Saturday - 06:00-08:59': func, 'Saturday - 09:00-11:59': func,
-         'Saturday - 12:00-14:59': func, 'Saturday - 15:00-18:59': func}).reset_index()
-
-    group['Total'] = group.sum(axis=1)
-    top_5_cities = group.nlargest(5, 'Total')
-    top_5_cities  = top_5_cities
-    """
-    my_xticks = ['15:00-18:59', '19:00-23:59', '00:00-03:59', '04:00-05:59', '06:00-08:59', '09:00-11:59',
-                 '12:00-14:59', '15:00-18:59']
-    column_names_map = {
-        'OriginCityName':"OriginCityName",
-        'Friday - 15:00-18:59': '15:00-18:59',
-        'Friday - 19:00-23:59': '19:00-23:59',
-        'Saturday - 00:00-03:59': '04:00-05:59',
-        'Saturday - 04:00-05:59': '04:00-05:59',
-        'Saturday - 06:00-08:59': '06:00-08:59',
-        'Saturday - 09:00-11:59': '09:00-11:59',
-        'Saturday - 12:00-14:59': '12:00-14:59',
-        'Saturday - 15:00-18:59': '15:00-18:59',
-        'Total' : 'Total'
-    }
-    #top_5_cities.rename(columns=column_names_map, inplace=True)
-    """
-
-    print(top_5_cities)
-    for _,row in top_5_cities.iterrows():
-        label = get_display(row['OriginCityName'])
-        plt.plot(row.drop(['OriginCityName', 'Total']), label=label,alpha = 0.8)
-
-    plt.xticks(rotation=20, ha='right')
-    plt.xlabel('Time Intervals')
-    plt.ylabel('Values')
-    plt.title('Line Plot for Each Origin City')
-    plt.legend()
-    plt.show()
-
-
-def createErrorBar(df):
-    func = sum  # @['mean', 'std']#"sum"
-    df = df[df["year"] == 2024]
-    df = df[df["BusType"] == "עירוני"]
-    group = df.groupby(['OriginCityName']).agg(
-        {'Friday - 15:00-18:59': func, 'Friday - 19:00-23:59': func, 'Saturday - 00:00-03:59': func,
-         'Saturday - 04:00-05:59': func, 'Saturday - 06:00-08:59': func, 'Saturday - 09:00-11:59': func,
-         'Saturday - 12:00-14:59': func, 'Saturday - 15:00-18:59': func}).reset_index()
-
-
-    print(group.columns)
-    print(group)
-    group = group[(group["OriginCityName"] == "ירושלים")| (group["OriginCityName"] == "תל אביב יפו")]
-    print(group)
-
-
-    for col in time_intervals:
-        plt.errorbar(group['OriginCityName'], group[col], yerr=stds[col], label=get_display(col), fmt='o')
-
-    plt.xlabel('Time Intervals')
-    plt.ylabel('Values')
-    plt.title('Line Plot for Each Origin City')
-    plt.legend()
-    plt.show()
-
-
 
 
 def createViolinChart(df):
@@ -436,14 +296,11 @@ def createViolinChart(df):
 
     #prepare for violin
     sliced = df[['OriginCityName','Friday - 15:00-18:59','Friday - 19:00-23:59','Saturday - 00:00-03:59','Saturday - 04:00-05:59','Saturday - 06:00-08:59','Saturday - 09:00-11:59','Saturday - 12:00-14:59','Saturday - 15:00-18:59']]
-    #df['OriginCityName']= df['OriginCityName'].apply(lambda x:get_display(str(x)))
-
     df = df[(df["OriginCityName"] == "ירושלים") | (df["OriginCityName"] == "חיפה") | (df["OriginCityName"] == "נצרת") | (df["OriginCityName"] == "מגאר")| (df["OriginCityName"] == "נוף הגליל")]
 
     #df = df[['OriginCityName', 'Saturday - 12:00-14:59']].dropna()
     df["OriginCityName"] = df["OriginCityName"].apply(get_display)
     # Display the plot
-
     fig, ax = plt.subplot_mosaic(
         [
             ['main', 'radio']
@@ -451,33 +308,33 @@ def createViolinChart(df):
         width_ratios=[5, 1]
        # layout='constrained',
     )
-    ax["main"] = sns.violinplot(x='OriginCityName', y='Saturday - 12:00-14:59', data=df, linewidth=1.5,
-                                showextrema=True, ax=ax['main'])
-    ax['main'].set_xlabel(get_display('שם עיר'))
-    ax['main'].set_ylabel(get_display('כמות נוסעים'+ " \n" +' ממוצעת לקו'), rotation=0, labelpad=30)
-    ax['main'].set_title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת'))
-    ax['main'].set_ylim(0, 200)
+    ax["main"] = sns.violinplot(x='OriginCityName', y='Friday - 15:00-18:59', data=df, linewidth=1.5, showextrema=True, ax=ax['main'])
+    ax['main'].set_xlabel(get_display('שם עיר'), fontsize=16)
+    ax['main'].tick_params(axis='x', labelsize=14)
+    ax['main'].tick_params(axis='y', labelsize=14)
+    ax['main'].set_ylabel(get_display('כמות נוסעים' + " \n" + ' ממוצעת לקו'), rotation=0, labelpad=40, fontsize=16)
+    ax['main'].set_title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת'), fontsize=24)
+    ax['main'].set_ylim(0, 210)
+    plt.draw()
 
 
-
-
-
-    #ax_radio = plt.axes([0, 0.5, 0.15, 0.5])  # [left, bottom, width, height]
     radio_button = RadioButtons(ax['radio'], ('Friday - 15:00-18:59','Friday - 19:00-23:59','Saturday - 06:00-08:59','Saturday - 09:00-11:59','Saturday - 12:00-14:59','Saturday - 15:00-18:59'))
     ax['radio'].set_title(get_display('התפלגות לפי תקופה'))
     def on_radio_button_clicked(label):
         ax['main'].cla()  # Clear current plot
-        sns.violinplot(x='OriginCityName', y=label, data=df, linewidth=1.5, showextrema=True,ax=ax['main'])
-        ax['main'].set_xlabel(get_display('שם עיר'))
-        ax['main'].set_ylabel(get_display('כמות נוסעים'+ " \n" +' ממוצעת לקו'), rotation=0, labelpad=30)
-        ax['main'].set_title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת'))
-        ax['main'].set_ylim(0, 150)
+        sns.violinplot(x='OriginCityName', y=label, data=df, linewidth=1.5, showextrema=True,ax=ax['main'],fontsize=14)
+        ax['main'].set_xlabel(get_display('שם עיר'), fontsize=16)
+        ax['main'].tick_params(axis='x', labelsize=14)
+        ax['main'].tick_params(axis='y', labelsize=14)
+        ax['main'].set_ylabel(get_display('כמות נוסעים' + " \n" + ' ממוצעת לקו'), rotation=0, labelpad=40, fontsize=16)
+        ax['main'].set_title(get_display('ירושלים בפסגה: התפלגות כמות הנוסעים הממוצעת לקו ביום שבת'), fontsize=24)
+        ax['main'].set_ylim(0, 210)
         plt.draw()
     radio_button.on_clicked(on_radio_button_clicked)
 
     #Slider
     ax_slider = plt.axes([0.2, 0.02, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-    slider = RangeSlider(ax_slider, 'Range', 0, 200, valinit=(0, 200))
+    slider = RangeSlider(ax_slider, get_display('כמות נוסעים ממוצעת לקו'), 0, 200, valinit=(0, 210))
 
     def update_range(val):
         lower, upper = slider.val
@@ -500,33 +357,16 @@ if __name__ == '__main__':
     import plotly.graph_objects as go
     import geopandas as gpd # pip install geopandas
     import mplcursors
-    df = loadData()
 
+    df = loadData()
     #getDescriptiveStatistics(df)
     #createGeoMapChart(df)
-    #CreateStackedInvestment(df)
-    #createNetworkGraph(df)
-    #CreateScatterPlot(df)
-    #createLinePlot(df)
-    # createZerosChart(df)
-    # CreateStackedBarChart(df)
-    #createBarChart(df)
-    #createErrorBar(df)
-    createViolinChart(df)
-    #df = load2324Data()
     #createTreeMap(df)
+    #createBarChart(df)
+    #createNetworkGraph(df)
+    #createViolinChart(df)
+    #CreateStackedBarChart(df)
 
 
-
-"""
-    empty_df = pd.DataFrame(columns=["CityName1","CityName2","WeeklyPassengers"])
-    print(empty_df)
-    for index, row in group.iterrows():
-        for index1, row1 in group.iterrows():
-            if row["OriginCityName"] == row1["CityName2"] and row["DestinationCityName"] == lastrow["CityName1"]:
-                empty_df[row["OriginCityName"] == empty_df["CityName2"]]["WeeklyPassengers"] += row["WeeklyPassengers"]
-            else:
-                empty_df.append(row, ignore_index=True)
-
-    print(empty_df)
-"""
+    #BONUS: Busses with 0 passengers?
+    #createZerosChart(df)
